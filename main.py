@@ -3,20 +3,34 @@ import requests
 from bs4 import BeautifulSoup
 
 #=========== Pesquisas ===========
+URL_ACAO = 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-acao'
+URL_PAGAMENTO = 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento'
+dados = {
+    'blocos': 10,
+    'ano':2020,
+    'count': 100,
+    'cpfCnpjUg': 11956268000118,
+    'estado': 'PA',
+    'municipio': 150580,
+    'page': 1,
+    'tipoConsulta': 2
+}
+
+
 detalhada = {
     'custeio': {
         'assistencia_farmaceutica': {
-            'total': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-acao?ano=2020&blocos=10&count=10&cpfCnpjUg=11956268000118&estado=PA&grupo=35&municipio=150580&page=1&tipoConsulta=2',
-            'detalhe':'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=62420&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'
+            'geral': {'url': URL_ACAO, 'grupo': 35},
+            0: {'url': URL_PAGAMENTO, 'acoes': 62420}
         },
         'atencao_basica': {
-            'geral':'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-acao?ano=2020&blocos=10&count=10&cpfCnpjUg=11956268000118&estado=PA&grupo=12&municipio=150580&page=1&tipoConsulta=2',
-            0: {'nome': 'AGENTE COMUNITÁRIO DE SAÚDE', 'url': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=62060&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'},
-            1: {'nome': 'APOIO À MANUTENÇÃO DOS POLOS DE ACADEMIA DA SAÚDE', 'url': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=62458&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'},
-            2: {'nome': 'INCENTIVO FINANCEIRO DA APS - FATOR COMPENSATÓRIO DE TRANSIÇÃO', 'url': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65586&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'},
-            3: {'nome': 'INCENTIVO FINANCEIRO DA APS - DESEMPENHO', 'url': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65580&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'},
-            4: {'nome': 'INCENTIVO PARA AÇÕES ESTRATÉGICAS', 'url': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65582&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'},
-            5: {'nome': 'IMPLEMENTAÇÃO DE POLÍTICAS PARA A REDE CEGONHA', 'url': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65178&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'}
+            'geral': {'url': URL_ACAO, 'grupo': 12},
+            0: {'nome': 'AGENTE COMUNITÁRIO DE SAÚDE', 'url': URL_PAGAMENTO, 'acoes': 62060},
+            1: {'nome': 'APOIO À MANUTENÇÃO DOS POLOS DE ACADEMIA DA SAÚDE', 'url': URL_PAGAMENTO, 'acoes': 62458},
+            2: {'nome': 'INCENTIVO FINANCEIRO DA APS - FATOR COMPENSATÓRIO DE TRANSIÇÃO', 'url': URL_PAGAMENTO, 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65586,
+            3: {'nome': 'INCENTIVO FINANCEIRO DA APS - DESEMPENHO', 'url': URL_PAGAMENTO, 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65580&ano=2020&blocos=10},
+            4: {'nome': 'INCENTIVO PARA AÇÕES ESTRATÉGICAS', 'url': URL_PAGAMENTO, 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65582&ano=2020&blocos=10&count},
+            5: {'nome': 'IMPLEMENTAÇÃO DE POLÍTICAS PARA A REDE CEGONHA', 'url': URL_PAGAMENTO, 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-pagamento?acoes=65178&ano=2020&blocos=10&count=25&cpfCnpjUg=11956268000118&estado=PA&municipio=150580&page=1&tipoConsulta=2'}
         },
         'media_e_alta_complexidade': {
             'geral': 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-acao?ano=2020&blocos=10&count=10&cpfCnpjUg=11956268000118&estado=PA&grupo=14&municipio=150580&page=1&tipoConsulta=2',
