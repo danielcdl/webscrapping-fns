@@ -4,23 +4,26 @@ from datetime import date
 from time import sleep
 
 from tqdm import tqdm
-import xlwt
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
+from openpyxl.styles.borders import Border, Side, BORDER_THIN
+
 
 colunas = ('A', 'B', 'C', 'D', 'E', 'F', 'G','H','I','J','K','L','M','N','O')
 meses = ('Jan', 'Fev', 'Mar', 'Abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez', 'Valor Total')
 nome_tabela = ('ATENCAO BÁSICA', 'VIGILÂNCIA EM SAÚDE', 'ASSISTÊNCIA FARMACÊUTICA')
-cores = {'ATENCAO BÁSICA': 'green', 'VIGILÂNCIA EM SAÚDE': 'violet', 'ASSISTÊNCIA FARMACÊUTICA': 'light_blue'}
+
 nome_tabela_covid = ('COMPETÊNCIA/ PARCELA', 'Nº OB', 'DATA OB', 'TIPO DE REPASSE',	'BANCO OB',	'AGÊNCIA OB',
     'CONTA OB', 'VALOR TOTAL', 'DESCONTO', 'LÍQUIDO', 'REJEIÇÃO', 'PROCESSO', 'Nº PROPOSTA', 'PORTARIA')
 
 municipios = (
-    {'nome': 'Anajás', 'cpfCnpjUg': 13715424000184, 'municipio': 150070},
-    {'nome': 'Bagre', 'cpfCnpjUg': 13888332000104, 'municipio': 150110},
+    # {'nome': 'Anajás', 'cpfCnpjUg': 13715424000184, 'municipio': 150070},
+    # {'nome': 'Bagre', 'cpfCnpjUg': 13888332000104, 'municipio': 150110},
     {'nome': 'Breves', 'cpfCnpjUg': 17298800000133, 'municipio': 150180},
-    {'nome': 'Curralinho', 'cpfCnpjUg': 11441240000148, 'municipio': 150280},
-    {'nome': 'Gurupá', 'cpfCnpjUg': 12049775000130, 'municipio': 150310},
-    {'nome': 'Melgaço', 'cpfCnpjUg': 11530230000189, 'municipio': 150450},
-    {'nome': 'Portel', 'cpfCnpjUg': 11956268000118, 'municipio': 150580}
+    # {'nome': 'Curralinho', 'cpfCnpjUg': 11441240000148, 'municipio': 150280},
+    # {'nome': 'Gurupá', 'cpfCnpjUg': 12049775000130, 'municipio': 150310},
+    # {'nome': 'Melgaço', 'cpfCnpjUg': 11530230000189, 'municipio': 150450},
+    # {'nome': 'Portel', 'cpfCnpjUg': 11956268000118, 'municipio': 1}
 )
 
 URL_ACAO = 'https://consultafns.saude.gov.br/recursos/consulta-detalhada/detalhe-acao'
@@ -144,9 +147,19 @@ def covid_tabela(parametros):
     return tabela
 
 
+try:
+    planilha = load_workbook(filename=f'Planilha de acompanhamento {ano}.xlsx')
+except FileNotFoundError:
+    planilha = load_workbook(filename='modelo/modelo.xlsx')
 
-planilha = xlwt.Workbook()
-pbar = tqdm(total=len(municipios) * (len(grupos) +1) * mes_atual + 3, desc='Iniciando')
+bordas = Border(
+    left=Side(border_style=BORDER_THIN, color='00000000'),
+    right=Side(border_style=BORDER_THIN, color='00000000'),
+    top=Side(border_style=BORDER_THIN, color='00000000'),
+    bottom=Side(border_style=BORDER_THIN, color='00000000')
+)
+
+pbar = tqdm(total=len(municipios) * 3 * mes_atual + 1, desc='Iniciando')
 for municipio in municipios:
     pbar.desc = f"Baixando {municipio['nome']}"
     dados = dados_geral
@@ -161,10 +174,11 @@ for municipio in municipios:
         descricoes_geral.append(descricoes)
         tabela = []
         for i in range(len(chaves)):
-            tabela.append([0]*12)
+            tabela.append(['']*12)
         for mes in range(1, mes_atual + 1):
             dados['mes'] = mes
             valores = dados_tabela(dados)
+
             for chave in valores:
                 tabela[chaves[chave]][mes-1] = valores[chave]
             pbar.update(1)
@@ -181,79 +195,91 @@ for municipio in municipios:
         valores = covid_tabela(dados)
         for valor in valores:
             tabela.append(valor)
-        pbar.update(1)
+    pbar.update(1)
     tabela_geral.append(tabela)
     del dados['acoes'] 
     del dados['componentes']
 
     #=============== Salvar Planilha ===========================
-    bordas = xlwt.easyxf("borders: left thin, right thin, top thin, bottom thin;")
-    bordas_negrito = xlwt.easyxf("font: bold on; borders: left thin, right thin, top thin, bottom thin;")
-    bordas_left = xlwt.easyxf("borders: left thin;")
 
-    aba = planilha.add_sheet(municipio['nome'])
-    
-    aba.col(1).width = 367 * 30
-    for i in range(2, 14):
-        aba.col(i).width = 367 * 13
-    linha = 7
-    indice = 0
-    for nome in nome_tabela:
-        bordas_top_bottom = xlwt.easyxf(f"font: bold on; borders: top thin, bottom thin; pattern: pattern solid, fore_colour {cores[nome]};")
-        bordas_left_top_bottom = xlwt.easyxf(f"font: bold on; borders: left thin, top thin, bottom thin; pattern: pattern solid, fore_colour {cores[nome]};")
-        bordas_fundo = xlwt.easyxf(f"font: bold on; borders: left thin, right thin, top thin, bottom thin; pattern: pattern solid, fore_colour {cores[nome]};")
-        aba.write(linha, 1, '', bordas_left_top_bottom)
-        aba.write(linha, 14, '', bordas_left)
-        aba.write(linha, 6, nome, bordas_top_bottom)
-        linha += 1
-        aba.write(linha, 1, '', bordas_fundo)
-        for i in range(12):
-            if i != 4:
-                aba.write(linha - 1, i + 2, '', bordas_top_bottom)
-            aba.write(linha, i + 2, meses[i], bordas_fundo)
-        
-        bordas.alignment.wrap = 1
-        inicio_soma = linha + 2
-        bordas.num_format_str = "#,##0.00"
-        for linha_grupo, descricao in zip(tabela_geral[indice], descricoes_geral[indice]):    
-            linha += 1
-            aba.write(linha, 1, descricao, bordas)
-            for k in range(12):
-                aba.write(linha, k + 2, linha_grupo[k], bordas)
-        linha += 1
-        aba.write(linha, 1, 'Subtotal Componente', bordas_negrito)
+    aba = planilha[municipio['nome']]
+
+    linha = 14
+    for linha_grupo, descricao in zip(tabela_geral[0], descricoes_geral[0]):
+        aba[f'{colunas[1]}{linha}'] = descricao
+        aba[f'{colunas[1]}{linha}'].border = bordas
+        aba[f'{colunas[14]}{linha}'] = f'=SUM({colunas[2]}{linha}:{colunas[13]}{linha})'
+        aba[f'{colunas[14]}{linha}'].font = Font(bold=True)
+        aba[f'{colunas[14]}{linha}'].border = bordas
         for k in range(12):
-            aba.write(linha, k + 2, xlwt.Formula(f'SUM({colunas[k + 2]}{inicio_soma}:{colunas[k + 2]}{linha})'), bordas_negrito)
-        linha += 2
-        indice += 1
-
-    bordas_top_bottom = xlwt.easyxf("font: bold on; borders: top thin, bottom thin; pattern: pattern solid, fore_colour yellow;")
-    bordas_left_top_bottom = xlwt.easyxf("font: bold on; borders: left thin, top thin, bottom thin; pattern: pattern solid, fore_colour yellow;")
-    bordas_fundo = xlwt.easyxf("font: bold on; borders: left thin, right thin, top thin, bottom thin; pattern: pattern solid, fore_colour yellow;")
-    aba.write(linha, 1, '', bordas_left_top_bottom)
-    aba.write(linha, 15, '', bordas_left)
-    aba.write(linha, 6, 'RECURSOS DE CUSTEIO COVID-19', bordas_top_bottom)
-    linha += 1
-    for i in range(len(nome_tabela_covid)):
-        if 0 < i != 5:
-            aba.write(linha - 1, i + 1, '', bordas_top_bottom)
-        aba.write(linha, i + 1, nome_tabela_covid[i], bordas_fundo)
-    
-    if len(tabela_geral) == 4:
-        for linha_grupo in tabela_geral[3]:
-            linha += 1
-            for k in range(len(linha_grupo)):
-                aba.write(linha, k + 1, linha_grupo[k], bordas)
-    linha += 1
-    aba.write(linha, 1, 'TOTAL   GERAL', bordas_negrito)
+            aba[f'{colunas[k + 2]}{linha}'] = linha_grupo[k]
+            aba[f'{colunas[k + 2]}{linha}'].border = bordas
+        linha += 1  
+    aba[f'{colunas[1]}{linha}'] = 'Subtotal Componente'
+    aba[f'{colunas[1]}{linha}'].border = bordas
+    aba[f'{colunas[1]}{linha}'].font = Font(bold=True)
     for k in range(13):
-        if k == 6 or k == 8:
-            aba.write(linha, k + 2, xlwt.Formula(f'SUM({colunas[k + 2]}{inicio_soma}:{colunas[k + 2]}{linha})'), bordas_negrito)
-        else:
-            aba.write(linha, k + 2, '', bordas)
+        aba[f'{colunas[k + 2]}{linha}'] = f'=SUM({colunas[k + 2]}14:{colunas[k + 2]}{linha-1})'
+        aba[f'{colunas[k + 2]}{linha}'].border = bordas
+        aba[f'{colunas[k + 2]}{linha}'].font = Font(bold=True)
+
+    
+    linha = 28
+    for linha_grupo, descricao in zip(tabela_geral[1], descricoes_geral[1]):
+        aba[f'{colunas[1]}{linha}'] = descricao
+        aba[f'{colunas[1]}{linha}'].border = bordas
+        aba[f'{colunas[14]}{linha}'] = f'=SUM({colunas[2]}{linha}:{colunas[13]}{linha})'
+        aba[f'{colunas[14]}{linha}'].font = Font(bold=True)
+        aba[f'{colunas[14]}{linha}'].border = bordas
+        for k in range(12):
+            aba[f'{colunas[k + 2]}{linha}'] = linha_grupo[k]
+            aba[f'{colunas[k + 2]}{linha}'].border = bordas
+        linha += 1  
+    aba[f'{colunas[1]}{linha}'] = 'Subtotal Componente'
+    aba[f'{colunas[1]}{linha}'].border = bordas
+    for k in range(13):
+        aba[f'{colunas[k + 2]}{linha}'] = f'=SUM({colunas[k + 2]}28:{colunas[k + 2]}{linha-1})'
+        aba[f'{colunas[k + 2]}{linha}'].border = bordas
+        aba[f'{colunas[k + 2]}{linha}'].font = Font(bold=True)
+    
+    linha = 37
+    for linha_grupo, descricao in zip(tabela_geral[2], descricoes_geral[2]):
+        aba[f'{colunas[1]}{linha}'] = descricao
+        aba[f'{colunas[1]}{linha}'].border = bordas
+        aba[f'{colunas[14]}{linha}'] = f'=SUM({colunas[2]}{linha}:{colunas[13]}{linha})'
+        aba[f'{colunas[14]}{linha}'].font = Font(bold=True)
+        aba[f'{colunas[14]}{linha}'].border = bordas
+        for k in range(12):
+            aba[f'{colunas[k + 2]}{linha}'] = linha_grupo[k]
+            aba[f'{colunas[k + 2]}{linha}'].border = bordas
+        linha += 1  
+    aba[f'{colunas[1]}{linha}'] = 'Subtotal Componente'
+    aba[f'{colunas[1]}{linha}'].border = bordas
+    for k in range(13):
+        aba[f'{colunas[k + 2]}{linha}'] = f'=SUM({colunas[k + 2]}37:{colunas[k + 2]}{linha-1})'
+        aba[f'{colunas[k + 2]}{linha}'].border = bordas
+        aba[f'{colunas[k + 2]}{linha}'].font = Font(bold=True)
+    
+    linha = 43
+    for linha_grupo in tabela_geral[3]:
+        for k in range(len(linha_grupo)):
+            aba[f'{colunas[k + 2]}{linha}'] = linha_grupo[k]
+            aba[f'{colunas[k + 2]}{linha}'].border = bordas
+        linha += 1
+    aba[f'{colunas[1]}{linha}'] = 'TOTAL GERAL'
+    aba[f'{colunas[1]}{linha}'].font = Font(bold=True)
+    aba[f'{colunas[1]}{linha}'].border = bordas
+    if len(tabela_geral) != 0:
+        aba[f'{colunas[7]}{linha}'] = f'=SUM({colunas[7]}43:{colunas[k + 2]}{linha-1})'
+        aba[f'{colunas[7]}{linha}'].border = bordas
+        aba[f'{colunas[7]}{linha}'].font = Font(bold=True)
+        aba[f'{colunas[9]}{linha}'] = f'=SUM({colunas[9]}43:{colunas[k + 2]}{linha-1})'
+        aba[f'{colunas[9]}{linha}'].border = bordas
+        aba[f'{colunas[9]}{linha}'].font = Font(bold=True)
+    
 while True:
     try:
-        planilha.save(f'Planilha de acompanhamento {ano}.xls')
+        planilha.save(f'Planilha de acompanhamento {ano}.xlsx')
         print('=' * 15)
         print('Arquivo salvo com SUCESSO!')
         print('=' * 15)
